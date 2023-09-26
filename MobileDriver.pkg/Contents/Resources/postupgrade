@@ -1,0 +1,261 @@
+#!/bin/sh
+#
+# Script args:
+# $0: full path to script
+# $1: full path to top level package dir, no trailing slash
+# $2: full path to installed location
+# $3:  ????? Path to install Volume????
+# $4:  ?????
+
+update_extension_10_6()
+{
+    if ls /dev/tty.* |grep -c HUAWEIMobile-Pcui;then
+        echo "HUAWEIMoible-Pcui is ok"
+    else
+        if kextstat|grep AppleUSBCDC;then
+            kextunload /System/Library/Extensions/IOUSBFamily.kext/Contents/PlugIns/AppleUSBCDC.kext
+            /System/Library/Extensions/HuaweiDataCardDriver.kext/Contents/PlugIns/MBBActivateApp&
+            kextload /System/Library/Extensions/IOUSBFamily.kext/Contents/PlugIns/AppleUSBCDC.kext
+        else
+            /System/Library/Extensions/HuaweiDataCardDriver.kext/Contents/PlugIns/MBBActivateApp&
+        fi
+
+    fi
+    if kextstat |grep -c HuaweiDataCard; then
+        echo "HuaweiDataCardDriver has been loaded!"
+    else
+        sleep 20
+        echo "Load HuaweiDataCardDriver.kext begin"
+        kextload  /System/Library/Extensions/HuaweiDataCardDriver.kext/Contents/PlugIns/*.kext
+        echo "Load HuaweiDataCardDriver.kext end"
+    fi
+
+    PID=`ps -axc | grep kextd | perl -e '($a,$r,$z)=split /  */, <>; print $r;'`
+    kill -HUP $PID
+    touch /System/Library/Extensions
+}
+
+update_extension()
+{
+    kextload -t /Library/Extensions/HuaweiDataCardDriver_10_9.kext/Contents/PlugIns/*.kext
+    echo "(update_extension)Mac OS X is:" `sw_vers -productVersion` ""
+
+    PID=`ps -axc | grep kextd | perl -e '($a,$r,$z)=split /  */, <>; print $r;'`
+    kill -HUP $PID
+
+#10.9 or Higher
+    echo "kextload HuaweiDataCardDriver_10_9.kext (" `sw_vers -productVersion` ")"
+    kextload -t /Library/Extensions/HuaweiDataCardDriver_10_9.kext/
+
+    if ls /dev/tty.* |grep -c HUAWEIMobile-Pcui;then
+        echo "HUAWEIMoible-Pcui is ok"
+    else
+        if kextstat|grep AppleUSBCDC;
+        then
+            kextunload /System/Library/Extensions/IOUSBFamily.kext/Contents/PlugIns/AppleUSBCDC.kext
+
+#10.9 or Higher
+            /Library/Extensions/HuaweiDataCardDriver_10_9.kext/Contents/PlugIns/MBBActivateApp&
+            echo "(HuaweiDataCardDriver_10_9.kext) Found AppleUSBCDC,unload it and--->MBBActivateApp-2 (" `sw_vers -productVersion` ")"
+            kextload /System/Library/Extensions/IOUSBFamily.kext/Contents/PlugIns/AppleUSBCDC.kext
+
+        else
+#10.9 or Higher
+                /Library/Extensions/HuaweiDataCardDriver_10_9.kext/Contents/PlugIns/MBBActivateApp&
+                echo "(HuaweiDataCardDriver_10_9.kext) Not Found AppleUSBCDC,unload it and--->MBBActivateApp-4 (" `sw_vers -productVersion` ")"
+        fi
+
+        if sw_vers -productVersion |grep -c 10.4; 
+        then
+            if kextstat|grep AppleUSBCDCDMM.kext;
+            then
+                kextunload /System/Library/Extensions/IOUSBFamily.kext/Contents/PlugIns/AppleUSBCDCDMM.kext
+            fi
+        fi
+    fi
+    touch /System/Library/Extensions
+}
+
+update_driver()
+{
+
+    echo "(update_driver)Mac OS X is:" `sw_vers -productVersion` ""
+    echo "path is :$1"
+    echo $1
+
+    #used for 10.7 and early os x;
+    #if [ -f "$1/Contents/Resources/HUAWEI Mobile Connect - 3G Modem" ]
+    if [ -f "/Library/driver/HUAWEI Mobile Connect - 3G Modem" ]
+    then
+        #cp -f "$1/Contents/Resources/HUAWEI Mobile Connect - 3G Modem" "/System/Library/Modem Scripts/HUAWEI Mobile Connect - 3G Modem"
+        cp -f "/Library/driver/HUAWEI Mobile Connect - 3G Modem" "/System/Library/Modem Scripts/HUAWEI Mobile Connect - 3G Modem"
+    else
+        echo "can not found HUAWEI Mobile Connect - 3G Modem"
+    fi
+    
+    if sw_vers -productVersion |grep -c 10.5; 
+    then
+        #if [ -d "$1/Contents/Resources/HUAWEI Mobile.ccl" ]
+        if [ -d "/Library/driver/HUAWEI Mobile.ccl" ]
+        then
+            #cp -Rf "$1/Contents/Resources/HUAWEI Mobile.ccl" "/System/Library/Modem Scripts/"
+            cp -Rf "/Library/driver/HUAWEI Mobile.ccl" "/System/Library/Modem Scripts/"
+        fi
+    fi
+    
+    #used for 10.8 and higher os x;
+    #if [ -f "$1/Contents/Resources/HUAWEI Mobile Connect - 3G Modem" ]
+    if [ -f "/Library/driver/HUAWEI Mobile Connect - 3G Modem" ]
+    then
+        #cp -f "$1/Contents/Resources/HUAWEI Mobile Connect - 3G Modem" "/Library/Modem Scripts/HUAWEI Mobile Connect - 3G Modem"
+        cp -f "/Library/driver/HUAWEI Mobile Connect - 3G Modem" "/Library/Modem Scripts/HUAWEI Mobile Connect - 3G Modem"
+    else
+        echo "(2)can not found HUAWEI Mobile Connect - 3G Modem"
+    fi
+    #Removed Old Drivers
+    rm -Rf /System/Library/Extensions/HuaweiDataCard*.kext
+    rm -Rf /System/Library/Extensions/USBExpressCardCantWake_Huawei.kext
+    rm -Rf /Library/Extensions/HuaweiDataCard*.kext
+
+    #10.9 or Higher
+    #rm -Rf /System/Library/Extensions/HuaweiDataCardDriver.kext
+    #rm -Rf /System/Library/Extensions/USBExpressCardCantWake_Huawei.kext
+
+    #rm -Rf /Library/Extensions/HuaweiDataCardDriver_10_9.kext
+    #mv -f /Library/HuaweiDataCardDriver_10_9.kext /Library/Extensions/HuaweiDataCardDriver_10_9.kext
+    mv -f /Library/driver/HuaweiDataCardDriver_10_9.kext /Library/Extensions/HuaweiDataCardDriver_10_9.kext
+
+    chown -R root:wheel /Library/Extensions/HuaweiDataCardDriver_10_9.kext
+    chmod -R 755 /Library/Extensions/HuaweiDataCardDriver_10_9.kext
+
+    #rm -Rf /Library/HuaweiDataCardDriver.kext
+    rm -Rf /Library/driver/
+
+    rm /System/Library/Extensions.kextcache
+    rm -Rf /System/Library/Caches
+    touch /System/Library/Extensions
+
+    if sw_vers -productVersion |grep -c 10.6; then
+        update_extension_10_6
+    else
+        update_extension
+    fi
+}
+
+chech_driver_install()
+{
+    NEED_UPDATE=0
+    VERSIONVOL=3
+
+    echo "chech_driver_install enter, NEED_UPDATE:$NEED_UPDATE"
+    OLD_VERSIONLINE=$[ $(cat -n $1/Contents/Info.plist |grep "CFBundleShortVersionString" |cut -d \< -f1)+1 ]
+    NEW_VERSIONLINE=$[ $(cat -n $2 |grep "CFBundleShortVersionString" |cut -d \< -f1)+1 ]
+
+    EXT_VERSION=$(cat -n $1/Contents/Info.plist |head -n 20 |grep $OLD_VERSIONLINE |cut -f $VERSIONVOL |cut -d \< -f2 |cut -d \> -f2)
+    VERSION=$(cat -n $2 |head -n 20 |grep $NEW_VERSIONLINE |cut -f $VERSIONVOL |cut -d \< -f2 |cut -d \> -f2)
+
+    EXT_TEMP=`echo $EXT_VERSION |awk -F '.' '{print $4}'`
+
+    echo "(1)EXT_TEMP:$EXT_TEMP, EXT_VERSION:$EXT_VERSION, VERSION:$VERSION"
+    if [ "$(echo $EXT_TEMP)" != "" ]
+    then
+    TEMP=`echo $VERSION |awk -F '.' '{print $4}'`
+    COMPARE=`echo "$TEMP-$EXT_TEMP" |bc`
+
+    echo "(2)TEMP:$TEMP, COMPARE:$COMPARE, VERSION:$VERSION"
+    if [ $COMPARE = "0" ] 
+    then
+        EXT_TEMP=`echo $EXT_VERSION |awk -F '.' '{print $1}'`
+            TEMP=`echo $VERSION |awk -F '.' '{print $1}'`
+            COMPARE=`echo "$TEMP-$EXT_TEMP" |bc`
+
+            echo "(3)TEMP:$TEMP, COMPARE:$COMPARE, EXT_TEMP:$EXT_TEMP"
+            if [ $COMPARE -lt "0" ]
+            then
+                echo "COMPARE < 0" #packet is old
+                NEED_UPDATE=0
+            else
+                if [ $COMPARE = "0" ]
+                then
+                    EXT_TEMP=`echo $EXT_VERSION |awk -F '.' '{print $2}'`
+                    TEMP=`echo $VERSION |awk -F '.' '{print $2}'`
+                    COMPARE=`echo "$TEMP-$EXT_TEMP" |bc`
+                    echo "(4)TEMP:$TEMP, COMPARE:$COMPARE, EXT_TEMP:$EXT_TEMP"
+                    if [ $COMPARE -lt "0" ]
+                    then
+                        NEED_UPDATE=0 #packet is old
+                    else
+                        if [ $COMPARE = "0" ]
+                        then
+                            EXT_TEMP=`echo $EXT_VERSION |awk -F '.' '{print $3}'`
+                            TEMP=`echo $VERSION |awk -F '.' '{print $3}'`
+                            COMPARE=`echo "$TEMP-$EXT_TEMP" |bc`
+                            echo "(5)TEMP:$TEMP, COMPARE:$COMPARE, EXT_TEMP:$EXT_TEMP"
+                            if [ $COMPARE -lt "0" ]
+                            then
+                                NEED_UPDATE=0 #packet is old
+                            else
+                                NEED_UPDATE=1
+                            fi
+                        else
+                            NEED_UPDATE=1
+                        fi
+                    fi
+                else
+                    NEED_UPDATE=1
+                fi
+            fi
+    else
+        NEED_UPDATE=1
+    fi
+    else
+        NEED_UPDATE=1
+    fi
+    echo "chech_driver_install return, NEED_UPDATE:$NEED_UPDATE"
+    #return NEED_UPDATE;
+    return $NEED_UPDATE;
+}
+
+install_driver()
+{
+    echo "(install_driver)Mac OS X is:" `sw_vers -productVersion` ""
+
+    OLD_FILE="/Library/Extensions/HuaweiDataCardDriver_10_9.kext"
+    #NEW_FILE="/Library/HuaweiDataCardDriver_10_9.kext/Contents/Info.plist"
+    NEW_FILE="/Library/driver/HuaweiDataCardDriver_10_9.kext/Contents/Info.plist"
+    
+    if [ "$(ls /Library/Extensions/ |grep HuaweiDataCardDriver_10_9)" != "" ]
+    then
+        echo "(postinstall)Already Install drivers (" `sw_vers -productVersion` ")"
+        if kextstat|grep com.huawei.driver.HuaweiDataCardActivateDriver;
+        then
+            echo "(postinstall)HuaweiDataCardActivateDriver exist,unload it (" `sw_vers -productVersion` ")"
+            kextunload -t /Library/Extensions/HuaweiDataCardDriver_10_9.kext/Contents/PlugIns/MBBActivateDriver.kext
+        fi
+
+        #chech_driver_install
+        echo "call Check function, begin (" `sw_vers -productVersion` ")"
+        #NEED_UPDATE=$(chech_driver_install "$OLD_FILE" "$NEW_FILE")
+    chech_driver_install "$OLD_FILE" "$NEW_FILE"
+    NEED_UPDATE=$?
+        echo "call Check function end, NEED_UPDATE: $NEED_UPDATE (" `sw_vers -productVersion` ")"
+
+        if [ $NEED_UPDATE = "0" ];
+        then
+            echo "NEED_UPDATE is: $NEED_UPDATE (" `sw_vers -productVersion` ")"
+            #rm -Rf /Library/HuaweiDataCardDriver.kext
+            #rm -Rf /Library/HuaweiDataCardDriver_10_9.kext
+            rm -Rf /Library/driver
+        else
+            echo "NEED_UPDATE is: $NEED_UPDATE ,call update_driver (" `sw_vers -productVersion` ")"
+            update_driver "$1"
+        fi
+
+    else
+        echo "No driver found in LibraryExtensions,call update_driver (" `sw_vers -productVersion` ")"
+        update_driver "$1"
+    fi
+}
+
+install_driver "$1"
+exit 0

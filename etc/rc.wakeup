@@ -1,0 +1,3 @@
+#!/bin/sh
+kextunload /Library/Extensions/HuaweiDataCardDriver_10_9.kext
+kextload /Library/Extensions/HuaweiDataCardDriver_10_9.kext
